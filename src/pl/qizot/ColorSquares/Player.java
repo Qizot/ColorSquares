@@ -21,22 +21,31 @@ public class Player {
         this.map = map;
     }
 
+    public void startAt(Vector2d pos) {
+        putTile(createTile(pos));
+    }
+
     public void placeTileAtRandom() {
         int width = map.getWidth();
         int height = map.getHeight();
 
 
-        Vector2d pos = new Vector2d(rand.nextInt(width), rand.nextInt(height));
-
-        while (!map.canBePlaced(pos)) {
-            pos = new Vector2d(rand.nextInt(width), rand.nextInt(height));
-        }
-
+        Vector2d pos = map.getRandomEmptyPosition();
         putTile(createTile(pos));
     }
 
-    public void generateTileWave() {
+    public void clear() {
+        tiles.keySet().stream().forEach(pos -> map.removeSquare(pos));
+        tiles.clear();
+    }
+
+
+    /**
+     * @return indicate whether any new tile has been placed while generating wave
+     */
+    public boolean generateTileWave() {
         List<Tile> validTiles = tiles.values().stream().filter(Tile::isValid).collect(Collectors.toList());
+        if (validTiles.isEmpty()) return false;
 
         for (Tile tile: validTiles) {
             Vector2d pos = tile.getPosition();
@@ -57,6 +66,7 @@ public class Player {
             }
             tile.markInvalid();
         }
+        return true;
     }
 
     private void putTile(Tile tile) {
@@ -74,5 +84,10 @@ public class Player {
 
     public List<Tile> getTiles() {
         return new ArrayList<>(tiles.values());
+    }
+
+    @Override
+    public String toString() {
+        return color.toString();
     }
 }
