@@ -4,11 +4,13 @@ import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import javafx.util.Pair;
 
@@ -91,6 +93,30 @@ public class ColorSquaresApp extends Application {
         return result.orElse(null);
     }
 
+    private GridPane showScores() {
+
+
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 150, 10, 10));
+        List<Player> ps = players.stream().collect(Collectors.toList());
+        ps.sort((Player a, Player b) -> -Integer.compare(a.getTiles().size(), b.getTiles().size()));
+
+        for (int i = 0; i < ps.size(); i++) {
+            HBox box = new HBox();
+            box.getChildren().add(new Label(String.format("%s) %s", i + 1, ps.get(i).getTiles().size())));
+            if (ps.get(i).equals(humanPlayer)) {
+                box.getChildren().add(new Label(" You "));
+            }
+            box.getChildren().add(new Rectangle(10, 10, ps.get(i).getColor()));
+
+            gridPane.add(box, 0, i);
+
+        }
+        return gridPane;
+    }
+
     private Pane createContent() {
         Pane root = new Pane();
         root.setPrefSize(800, 600);
@@ -124,15 +150,6 @@ public class ColorSquaresApp extends Application {
         update(squares);
     }
 
-    void showScores() {
-//        Stage dialog = new Stage();
-//
-//
-//
-//        dialog.initOwner(parentStage);
-//        dialog.initModality(Modality.APPLICATION_MODAL);
-//        dialog.showAndWait();
-    }
 
     private HBox actionButtons() {
         HBox hbox = new HBox();
@@ -218,6 +235,14 @@ public class ColorSquaresApp extends Application {
             boolean hasBeenChanged = false;
             @Override
             public void handle(long now) {
+                if (isFinished) {
+                    isFinished = false;
+                    squares.getChildren().removeIf(n -> {
+                        return true;
+                    });
+                    squares.getChildren().add(showScores());
+
+                }
                 if (now - lastUpdate >= animationTimeStep && isRunning) {
                     hasBeenChanged = false;
                     List<Player> toWave = players.stream().collect(Collectors.toList());

@@ -39,6 +39,10 @@ public class Player {
         tiles.clear();
     }
 
+    public Color getColor() {
+        return color;
+    }
+
 
     /**
      * @return indicate whether any new tile has been placed while generating wave
