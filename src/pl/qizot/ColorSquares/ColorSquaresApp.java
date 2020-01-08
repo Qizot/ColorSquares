@@ -1,34 +1,32 @@
 package pl.qizot.ColorSquares;
 
-
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ColorSquaresApp extends Application {
 
-    private long animationTimeStep = 50 * 100_000_000;
+    private long animationTimeStep = 100_000_000;
     private final int  DEFAULT_TILE = 40;
-    private int TILE_SIZE =  DEFAULT_TILE;
+    private int TILE_SIZE_X = DEFAULT_TILE;
+    private int TILE_SIZE_Y = DEFAULT_TILE;
 
     private int W = 800;
     private int H = 600;
 
-    private int X_TILES = W / TILE_SIZE;
-    private int Y_TILES = H / TILE_SIZE;
+    private int X_TILES = W / TILE_SIZE_X;
+    private int Y_TILES = H / TILE_SIZE_Y;
 
     SquaresMap map;
     Random rand = new Random();
@@ -51,6 +49,48 @@ public class ColorSquaresApp extends Application {
         }
     }
 
+    private Pair<String, String> getBoardSize() {
+        Dialog<Pair<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("Board size");
+
+        // Set the button types.
+        ButtonType accept = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(accept);
+
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField xTiles = new TextField();
+        xTiles.setPromptText("X tiles");
+        TextField yTiles = new TextField();
+        yTiles.setPromptText("Y tiles");
+
+        gridPane.add(xTiles, 0, 0);
+        gridPane.add(new Label("To:"), 1, 0);
+        gridPane.add(yTiles, 2, 0);
+
+        dialog.getDialogPane().setContent(gridPane);
+
+        // Request focus on the username field by default.
+
+        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == accept) {
+                return new Pair<>(xTiles.getText(), yTiles.getText());
+            }
+            return null;
+        });
+
+        Optional<Pair<String, String>> result = dialog.showAndWait();
+
+        result.ifPresent(pair -> {
+            System.out.println("From=" + pair.getKey() + ", To=" + pair.getValue());
+        });
+        return result.orElse(null);
+    }
+
     private Pane createContent() {
         Pane root = new Pane();
         root.setPrefSize(800, 600);
@@ -59,8 +99,8 @@ public class ColorSquaresApp extends Application {
             @Override
             public void handle(MouseEvent event) {
                 if (!isRunning && !isFinished) {
-                    int x = (int)event.getX() / TILE_SIZE;
-                    int y = (int)event.getY() / TILE_SIZE;
+                    int x = (int)event.getX() / TILE_SIZE_X;
+                    int y = (int)event.getY() / TILE_SIZE_Y;
                     placePlayer(new Vector2d(x, y));
                 }
             }
@@ -80,6 +120,7 @@ public class ColorSquaresApp extends Application {
         placeEnemyPlayers(4);
         placeObstacles(5);
         isRunning = false;
+        isFinished = false;
         update(squares);
     }
 
@@ -121,7 +162,7 @@ public class ColorSquaresApp extends Application {
 
             Color randomColor = new Color(r, g, b, 1.0);
 
-            Player player = new Player(randomColor, TILE_SIZE, TILE_SIZE, map);
+            Player player = new Player(randomColor, TILE_SIZE_X, TILE_SIZE_Y, map);
             player.placeTileAtRandom();
             players.add(player);
         }
@@ -130,7 +171,7 @@ public class ColorSquaresApp extends Application {
     private void placeObstacles(int n) {
         for (int i = 0; i < n; i++) {
             Vector2d pos = map.getRandomEmptyPosition();
-            Obstacle o1 = new Obstacle(rand.nextInt(6), TILE_SIZE, TILE_SIZE, pos, map);
+            Obstacle o1 = new Obstacle(3 + rand.nextInt(X_TILES/10), TILE_SIZE_X, TILE_SIZE_Y, pos, map);
             obstacles.add(o1);
         }
     }
@@ -143,16 +184,22 @@ public class ColorSquaresApp extends Application {
         double b = rand.nextDouble();
 
         Color randomColor = new Color(r, g, b, 1.0);
-        humanPlayer = new Player(randomColor, TILE_SIZE, TILE_SIZE, map);
+        humanPlayer = new Player(randomColor, TILE_SIZE_X, TILE_SIZE_Y, map);
         players.add(humanPlayer);
 
         placeEnemyPlayers(4);
-        placeObstacles(5);
+        placeObstacles((X_TILES / 10) * (Y_TILES / 10));
 
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception{
+        var size = getBoardSize();
+        X_TILES = Integer.parseInt(size.getKey());
+        Y_TILES = Integer.parseInt(size.getValue());
+        TILE_SIZE_X = 800 / X_TILES;
+        TILE_SIZE_Y = 600 / Y_TILES;
+
         setup();
 
         BorderPane pane = new BorderPane();
